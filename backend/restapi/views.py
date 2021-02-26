@@ -8,6 +8,20 @@ from .models import User, Client
 from .serializers import UserSerializer, ClientSerializer
 
 
+@api_view(['GET'])
+def exists(request: HttpRequest, choice: int):
+    try:
+        if choice == 0:
+            User.objects.get(mobile_num=request.data['mobile_num'])
+        elif choice == 1:
+            Client.objects.get(mobile_num=request.data['mobile_num'])
+        return JsonResponse({'report': 'exists'}, status=status.HTTP_200_OK)
+    except ObjectDoesNotExist:
+        return JsonResponse({'report': 'does not exist'}, status=status.HTTP_200_OK)
+    except KeyError:
+        return JsonResponse({'error': 'incomplete request'}, status=status.HTTP_400_BAD_REQUEST)
+
+
 @api_view(['GET', 'POST'])
 def user(request: HttpRequest):
     if request.method == 'GET':
@@ -58,6 +72,14 @@ def client(request: HttpRequest):
             return JsonResponse(client_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+# @api_view(['GET', 'POST'])
+# def post(request: HttpRequest):
+#     if request.method == 'GET':
+#         return JsonResponse({})
+#     elif request.method == 'POST':
+#         return JsonResponse({})
+
+
 @api_view(['GET'])
 def scan(request: HttpRequest):
     try:
@@ -70,6 +92,8 @@ def scan(request: HttpRequest):
     for user in users:
         user_serializer = UserSerializer(user)
         user_location = user_serializer.data['location']
-        lst.append([pow(pow(user_location['latitude'] - latitude, 2) + pow(user_location['longitude'] - longitude, 2), 0.5), user_serializer.data['mobile_num']])
+        lst.append(
+            [pow(pow(user_location['latitude'] - latitude, 2) + pow(user_location['longitude'] - longitude, 2), 0.5),
+             user_serializer.data['mobile_num']])
     lst.sort()
     return JsonResponse({'report': lst}, status=status.HTTP_200_OK)
